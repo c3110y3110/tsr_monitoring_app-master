@@ -9,7 +9,7 @@ class UniqueSharedPreference {
     setString('selectedIndex', '0');
     setString('selectedUnit', avgList[0]);
     setString('maxvalue', '1.0');
-    setString('minvalue', '0.1');
+    setString('minvalue', '-1.0');
   }
 
   static String getString(String key, [String? defValue]) {
