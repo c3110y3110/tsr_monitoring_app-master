@@ -100,6 +100,12 @@ class _LiveChart extends State<LiveChart> {
     }
     double maxvalue = double.parse(UniqueSharedPreference.getString('maxvalue'));
     double minvalue = double.parse(UniqueSharedPreference.getString('minvalue'));
+    if (minvalue > maxvalue) {
+      final double temp = minvalue;
+      minvalue = maxvalue;
+      maxvalue = temp;
+    }
+    final _AxisRange axisRange = _getAxisRange(minvalue, maxvalue);
     return (
         Column(children: [
           Container(
@@ -109,8 +115,8 @@ class _LiveChart extends State<LiveChart> {
                   title: ChartTitle(text: channelNameMap[channelName]!),
                   primaryXAxis: DateTimeAxis(dateFormat: DateFormat('HH:mm')),
                   primaryYAxis: NumericAxis(
-                    minimum: minvalue,
-                    maximum: maxvalue,
+                    minimum: axisRange.min,
+                    maximum: axisRange.max,
                     decimalPlaces: 6,
                     rangePadding: ChartRangePadding.round,
                   ),
@@ -137,6 +143,37 @@ class _LiveChart extends State<LiveChart> {
         )
     );
 
+  }
+
+
+  _AxisRange _getAxisRange(double fallbackMin, double fallbackMax) {
+    if (chartData.isEmpty) {
+      return _AxisRange(fallbackMin, fallbackMax);
+    }
+    double dataMin = chartData.first.y;
+    double dataMax = chartData.first.y;
+    for (final _ChartData point in chartData) {
+      if (point.y < dataMin) {
+        dataMin = point.y;
+      }
+      if (point.y > dataMax) {
+        dataMax = point.y;
+      }
+    }
+    double range = dataMax - dataMin;
+    double padding;
+    if (range == 0) {
+      padding = dataMax.abs() * 0.1;
+      if (padding == 0) {
+        padding = (fallbackMax - fallbackMin).abs() * 0.1;
+      }
+      if (padding == 0) {
+        padding = 0.01;
+      }
+    } else {
+      padding = range.abs() * 0.1;
+    }
+    return _AxisRange(dataMin - padding, dataMax + padding);
   }
 
   @override
@@ -175,4 +212,10 @@ class _ChartData {
   _ChartData(this.x, this.y);
   DateTime x;
   double y;
+}
+
+class _AxisRange {
+  _AxisRange(this.min, this.max);
+  double min;
+  double max;
 }
