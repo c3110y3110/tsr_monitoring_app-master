@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:tsr_monitoring_app/util/constants.dart';
 import 'package:tsr_monitoring_app/util/unique_shared_preference.dart';
 
 class SettingPage extends StatefulWidget {
@@ -11,9 +12,13 @@ class SettingPage extends StatefulWidget {
 class _SettingPage extends State<SettingPage> {
   final _maxvalueController = TextEditingController();
   final _minvalueController = TextEditingController();
+  late List<String> _selectedMachines;
+  final List<String> _allMachines = List<String>.from(machineList);
   @override
   void initState() {
     super.initState();
+    final saved = UniqueSharedPreference.getStringList('selectedMachines', _allMachines);
+    _selectedMachines = saved.isEmpty ? List<String>.from(_allMachines) : List<String>.from(saved);
   }
   @override
   Widget build(BuildContext context) {
@@ -76,6 +81,27 @@ class _SettingPage extends State<SettingPage> {
           ),
         ),
         Padding(padding: EdgeInsets.only(top: 20)),
+        Text("메인 화면에 표시할 장비"),
+        ..._allMachines.map((machineName) {
+          final bool isSelected = _selectedMachines.contains(machineName);
+          return CheckboxListTile(
+            value: isSelected,
+            controlAffinity: ListTileControlAffinity.leading,
+            title: Text(machineName),
+            onChanged: (bool? checked) {
+              setState(() {
+                if (checked == true) {
+                  if (!_selectedMachines.contains(machineName)) {
+                    _selectedMachines.add(machineName);
+                  }
+                } else {
+                  _selectedMachines.remove(machineName);
+                }
+              });
+            },
+          );
+        }).toList(),
+        Padding(padding: EdgeInsets.only(top: 20)),
         ElevatedButton(
           onPressed: () => {
             _saveValue()
@@ -86,11 +112,35 @@ class _SettingPage extends State<SettingPage> {
   }
 
   void _saveValue() {
+    if (_selectedMachines.isEmpty) {
+      showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text("최소 1개 장비를 선택해주세요."),
+              actions: [
+                TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text("확인")
+                )
+              ],
+            );
+          }
+      );
+      return;
+    }
     try {
-      double.parse(_maxvalueController.text);
-      double.parse(_minvalueController.text);
-      UniqueSharedPreference.setString("maxvalue", _maxvalueController.text);
-      UniqueSharedPreference.setString("minvalue", _minvalueController.text);
+      final maxText = _maxvalueController.text.trim();
+      final minText = _minvalueController.text.trim();
+      if (maxText.isNotEmpty) {
+        double.parse(maxText);
+        UniqueSharedPreference.setString("maxvalue", maxText);
+      }
+      if (minText.isNotEmpty) {
+        double.parse(minText);
+        UniqueSharedPreference.setString("minvalue", minText);
+      }
+      UniqueSharedPreference.setStringList("selectedMachines", _selectedMachines);
       Navigator.of(context).pop();
     } catch(e) {
       _maxvalueController.clear();
