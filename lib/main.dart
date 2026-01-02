@@ -10,11 +10,12 @@ import 'package:tsr_monitoring_app/util/fcm_setting.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_localization/flutter_localization.dart';
 import 'package:tsr_monitoring_app/util/unique_shared_preference.dart';
+import 'package:tsr_monitoring_app/util/route_observer.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   fcmSetting();
-  UniqueSharedPreference.init();
+  await UniqueSharedPreference.init();
   CustomThemeMode.instance;
   runApp(MyApp());
 }
@@ -28,6 +29,7 @@ class MyApp extends StatelessWidget {
       //디버그 모드 체크 배터 삭제 예정
       debugShowCheckedModeBanner: false,
       title: 'TSR Monitoring App',
+      navigatorObservers: [routeObserver],
       initialRoute: '/',
       routes: {
         '/' : (context) => PageContainer(InitPage()),
